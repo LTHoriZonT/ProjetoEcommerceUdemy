@@ -108,7 +108,7 @@ class Category extends Model {
 		}
 
 	}
-
+//verificado
 	public function getProductsPage($page = 1, $itemsPerPage = 8)
 	{
 
