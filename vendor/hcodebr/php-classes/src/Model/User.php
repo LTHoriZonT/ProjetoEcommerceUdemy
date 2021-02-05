@@ -28,14 +28,15 @@ class User extends Model {
 
 	public static function checkLogin($inadmin = true)
 	{
-		if(
+
+		if (
 			!isset($_SESSION[User::SESSION])
 			||
 			!$_SESSION[User::SESSION]
 			||
 			!(int)$_SESSION[User::SESSION]["iduser"] > 0
 		) {
-
+			
 			return false;
 
 		} else {
@@ -43,19 +44,21 @@ class User extends Model {
 			if ($inadmin === true && (bool)$_SESSION[User::SESSION]['inadmin'] === true) {
 
 				return true;
+
+			} else if ($inadmin === false) {
+
+				return true;
+
+			} else {
+
+				return false;
+
 			}
 
-		} else if ($indadmin === false) {
-
-			return true;
-
-		} else {
-
-			return false;
 		}
 
-
 	}
+
 
 	public static function login($login, $password)
 	{
