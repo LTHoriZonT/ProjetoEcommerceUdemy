@@ -39,12 +39,12 @@ class Product extends Model {
 
 		$results = $sql->select("CALL sp_products_save(:idproduct, :desproduct, :vlprice, :vlwidth, :vlheight, :vllength, :vlweight, :desurl)", array(
 			":idproduct"=>$this->getidproduct(),
-			":desproduct"=>$this->getdesproduct()
-			":vlprice"=>$this->getvlprice()
-			":vlwidth"=>$this->getvlwidth()
-			":vlheight"=>$this->getvlheight()
-			":vllength"=>$this->getvllength()
-			":vlweight"=>$this->getvlweight()
+			":desproduct"=>$this->getdesproduct(),
+			":vlprice"=>$this->getvlprice(),
+			":vlwidth"=>$this->getvlwidth(),
+			":vlheight"=>$this->getvlheight(),
+			":vllength"=>$this->getvllength(),
+			":vlweight"=>$this->getvlweight(),
 			":vldesurl"=>$this->getdesurl()
 		));
 
@@ -125,6 +125,29 @@ class Product extends Model {
 
 	}
 
+	public function getFromURL($desurl)
+	{
+
+		$sql = new Sql();
+
+		$rows = $sql->select("SELECT * FROM tb_products WHERE desurl = :desurl LIMIT 1", [
+			'desurl'=>$desurl
+		]);
+
+		$this-setData($rows[0]);
+
+	}
+
+	public function getCategories()
+	{
+
+		$sql = new Sql();
+
+		return $sql->select("SELECT * FROM tb_cateries a INNER JOIN tb_productscategories b ON a.idcategory = b.idcategory WHERE b.idproduct = :idproduct", [
+				':idproduct'=>$this->getidproduct()
+		]);
+
+	}
 
 }
 
