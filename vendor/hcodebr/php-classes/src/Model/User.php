@@ -7,7 +7,7 @@ use \Hcode\Model;
 use \Hcode\Mailer;
 
 class User extends Model {
-	
+
 	const SESSION = "User";
 	const SECRET = "HcodePhp7_Secret";
 	const SECRET_IV = "HcodePhp7_Secret_IV";
@@ -17,9 +17,10 @@ class User extends Model {
 
 	public static function getFromSession()
 	{
+
 		$user = new User();
 
-		if (isset($_SESSION[User::SESSION]) && (int)$_SESSION[User::SESSION]["iduser"] > 0) {
+		if (isset($_SESSION[User::SESSION]) && (int)$_SESSION[User::SESSION]['iduser'] > 0) {
 
 			$user->setData($_SESSION[User::SESSION]);
 
@@ -39,7 +40,7 @@ class User extends Model {
 			||
 			!(int)$_SESSION[User::SESSION]["iduser"] > 0
 		) {
-			
+			//Não está logado
 			return false;
 
 		} else {
@@ -62,9 +63,9 @@ class User extends Model {
 
 	}
 
-
 	public static function login($login, $password)
 	{
+
 		$sql = new Sql();
 
 		$results = $sql->select("SELECT * FROM tb_users a INNER JOIN tb_persons b ON a.idperson = b.idperson WHERE a.deslogin = :LOGIN", array(
@@ -73,7 +74,7 @@ class User extends Model {
 
 		if (count($results) === 0)
 		{
-			throw new \Exception("Usuário Inexistente ou senha inválida");
+			throw new \Exception("Usuário inexistente ou senha inválida.");
 		}
 
 		$data = $results[0];
@@ -92,7 +93,7 @@ class User extends Model {
 			return $user;
 
 		} else {
-			throw new \Exception("Usuário inexistente ou senha inválida");
+			throw new \Exception("Usuário inexistente ou senha inválida.");
 		}
 
 	}
@@ -100,9 +101,13 @@ class User extends Model {
 	public static function verifyLogin($inadmin = true)
 	{
 
-		if (User::checkLogin($inadmin)){
+		if (!User::checkLogin($inadmin)) {
 
-			header("Location: /admin/login");
+			if ($inadmin) {
+				header("Location: /admin/login");
+			} else {
+				header("Location: /login");
+			}
 			exit;
 
 		}
@@ -111,7 +116,9 @@ class User extends Model {
 
 	public static function logout()
 	{
+
 		$_SESSION[User::SESSION] = NULL;
+
 	}
 
 	public static function listAll()
@@ -125,6 +132,7 @@ class User extends Model {
 
 	public function save()
 	{
+
 		$sql = new Sql();
 
 		$results = $sql->select("CALL sp_users_save(:desperson, :deslogin, :despassword, :desemail, :nrphone, :inadmin)", array(
@@ -137,10 +145,12 @@ class User extends Model {
 		));
 
 		$this->setData($results[0]);
+
 	}
 
 	public function get($iduser)
 	{
+
 		$sql = new Sql();
 
 		$results = $sql->select("SELECT * FROM tb_users a INNER JOIN tb_persons b USING(idperson) WHERE a.iduser = :iduser", array(
@@ -153,10 +163,12 @@ class User extends Model {
 
 
 		$this->setData($data);
+
 	}
 
 	public function update()
 	{
+
 		$sql = new Sql();
 
 		$results = $sql->select("CALL sp_usersupdate_save(:iduser, :desperson, :deslogin, :despassword, :desemail, :nrphone, :inadmin)", array(
@@ -169,7 +181,8 @@ class User extends Model {
 			":inadmin"=>$this->getinadmin()
 		));
 
-		$this->setData($results[0]);	
+		$this->setData($results[0]);		
+
 	}
 
 	public function delete()
@@ -185,6 +198,7 @@ class User extends Model {
 
 	public static function getForgot($email, $inadmin = true)
 	{
+
 		$sql = new Sql();
 
 		$results = $sql->select("
@@ -247,6 +261,7 @@ class User extends Model {
 				return $link;
 
 			}
+
 		}
 
 	}
@@ -287,12 +302,23 @@ class User extends Model {
 		}
 
 	}
+	
+	public static function setFogotUsed($idrecovery)
+	{
+
+		$sql = new Sql();
+
+		$sql->query("UPDATE tb_userspasswordsrecoveries SET dtrecovery = NOW() WHERE idrecovery = :idrecovery", array(
+			":idrecovery"=>$idrecovery
+		));
+
+	}
 
 	public function setPassword($password)
 	{
-		
 
 		$sql = new Sql();
+
 		$sql->query("UPDATE tb_users SET despassword = :password WHERE iduser = :iduser", array(
 			":password"=>$password,
 			":iduser"=>$this->getiduser()
@@ -397,7 +423,81 @@ class User extends Model {
 
 	}
 
+	public function getOrders()
+	{
+
+		$sql = new Sql();
+
+		$results = $sql->select("
+			SELECT * 
+			FROM tb_orders a 
+			INNER JOIN tb_ordersstatus b USING(idstatus) 
+			INNER JOIN tb_carts c USING(idcart)
+			INNER JOIN tb_users d ON d.iduser = a.iduser
+			INNER JOIN tb_addresses e USING(idaddress)
+			INNER JOIN tb_persons f ON f.idperson = d.idperson
+			WHERE a.iduser = :iduser
+		", [
+			':iduser'=>$this->getiduser()
+		]);
+
+		return $results;
+
+	}
+
+	public static function getPage($page = 1, $itemsPerPage = 10)
+	{
+
+		$start = ($page - 1) * $itemsPerPage;
+
+		$sql = new Sql();
+
+		$results = $sql->select("
+			SELECT SQL_CALC_FOUND_ROWS *
+			FROM tb_users a 
+			INNER JOIN tb_persons b USING(idperson) 
+			ORDER BY b.desperson
+			LIMIT $start, $itemsPerPage;
+		");
+
+		$resultTotal = $sql->select("SELECT FOUND_ROWS() AS nrtotal;");
+
+		return [
+			'data'=>$results,
+			'total'=>(int)$resultTotal[0]["nrtotal"],
+			'pages'=>ceil($resultTotal[0]["nrtotal"] / $itemsPerPage)
+		];
+
+	}
+
+	public static function getPageSearch($search, $page = 1, $itemsPerPage = 10)
+	{
+
+		$start = ($page - 1) * $itemsPerPage;
+
+		$sql = new Sql();
+
+		$results = $sql->select("
+			SELECT SQL_CALC_FOUND_ROWS *
+			FROM tb_users a 
+			INNER JOIN tb_persons b USING(idperson)
+			WHERE b.desperson LIKE :search OR b.desemail = :search OR a.deslogin LIKE :search
+			ORDER BY b.desperson
+			LIMIT $start, $itemsPerPage;
+		", [
+			':search'=>'%'.$search.'%'
+		]);
+
+		$resultTotal = $sql->select("SELECT FOUND_ROWS() AS nrtotal;");
+
+		return [
+			'data'=>$results,
+			'total'=>(int)$resultTotal[0]["nrtotal"],
+			'pages'=>ceil($resultTotal[0]["nrtotal"] / $itemsPerPage)
+		];
+
+	} 
 
 }
 
-?>
+ ?>

@@ -1,5 +1,5 @@
 <?php 
-//verificado
+
 use \Hcode\PageAdmin;
 use \Hcode\Model\User;
 use \Hcode\Model\Category;
@@ -138,7 +138,7 @@ $app->get("/admin/categories/:idcategory/products", function($idcategory){
 	]);
 
 });
-//verificado
+
 $app->get("/admin/categories/:idcategory/products/:idproduct/add", function($idcategory, $idproduct){
 
 	User::verifyLogin();

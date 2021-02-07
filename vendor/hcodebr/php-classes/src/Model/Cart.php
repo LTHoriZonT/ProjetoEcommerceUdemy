@@ -5,19 +5,19 @@ namespace Hcode\Model;
 use \Hcode\DB\Sql;
 use \Hcode\Model;
 use \Hcode\Mailer;
-use \Hcode\User;
+use \Hcode\Model\User;
 
 class Cart extends Model {
 
 	const SESSION = "Cart";
-	const SESSION_ERROR ="CartError";
+	const SESSION_ERROR = "CartError";
 
 	public static function getFromSession()
 	{
 
 		$cart = new Cart();
 
-		if (isset($_SESSION[Cart::SESSION]) && $_SESSION[Cart::SESSION]['idcart'] > 0) {
+		if (isset($_SESSION[Cart::SESSION]) && (int)$_SESSION[Cart::SESSION]['idcart'] > 0) {
 
 			$cart->get((int)$_SESSION[Cart::SESSION]['idcart']);
 
@@ -34,8 +34,9 @@ class Cart extends Model {
 				if (User::checkLogin(false)) {
 
 					$user = User::getFromSession();
+					
+					$data['iduser'] = $user->getiduser();	
 
-					$data["iduser"] = $user->getiduser();
 				}
 
 				$cart->setData($data);
@@ -43,6 +44,7 @@ class Cart extends Model {
 				$cart->save();
 
 				$cart->setToSession();
+
 
 			}
 
@@ -52,7 +54,6 @@ class Cart extends Model {
 
 	}
 
-
 	public function setToSession()
 	{
 
@@ -60,19 +61,22 @@ class Cart extends Model {
 
 	}
 
-	public function getFromSessionID(int $idcart)
+	public function getFromSessionID()
 	{
 
 		$sql = new Sql();
 
 		$results = $sql->select("SELECT * FROM tb_carts WHERE dessessionid = :dessessionid", [
-			":idcart"=>session_id()
+			':dessessionid'=>session_id()
 		]);
 
 		if (count($results) > 0) {
 
-		$this->setData($results[0]);
-	}
+			$this->setData($results[0]);
+
+		}
+
+	}	
 
 	public function get(int $idcart)
 	{
@@ -80,13 +84,14 @@ class Cart extends Model {
 		$sql = new Sql();
 
 		$results = $sql->select("SELECT * FROM tb_carts WHERE idcart = :idcart", [
-			":idcart"=>$idcart
+			':idcart'=>$idcart
 		]);
 
 		if (count($results) > 0) {
 
-		$this->setData($results[0]);
-	}
+			$this->setData($results[0]);
+
+		}
 
 	}
 
@@ -96,13 +101,12 @@ class Cart extends Model {
 		$sql = new Sql();
 
 		$results = $sql->select("CALL sp_carts_save(:idcart, :dessessionid, :iduser, :deszipcode, :vlfreight, :nrdays)", [
-			":idcart"=>$this->getidcart(),
-			":dessessionid"=>$this->getdessessionid(),
-			":iduser"=>$this->getiduser(),
-			":deszipcode"=>$this->getdeszipcode(),
-			":vlfreight"=>$this->getvlfreight(),
-			":nrdays"=>$this->getnrdays()
-
+			':idcart'=>$this->getidcart(),
+			':dessessionid'=>$this->getdessessionid(),
+			':iduser'=>$this->getiduser(),
+			':deszipcode'=>$this->getdeszipcode(),
+			':vlfreight'=>$this->getvlfreight(),
+			':nrdays'=>$this->getnrdays()
 		]);
 
 		$this->setData($results[0]);
@@ -247,6 +251,8 @@ class Cart extends Model {
 
 		}
 
+	}
+
 	public static function formatValueToDecimal($value):float
 	{
 
@@ -311,7 +317,6 @@ class Cart extends Model {
 		$this->setvltotal($totals['vlprice'] + (float)$this->getvlfreight());
 
 	}
-
 
 }
 
